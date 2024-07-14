@@ -31,7 +31,7 @@ services:
       - ./pipeline/airflow:/opt/airflow/dags
       - ./log/airflow:/opt/airflow/logs
       - ./plugin/airflow:/opt/airflow/plugins
-      - ./etl_component:/opt/airflow/script/module
+      - ./pipeline/airflow/tokopedia_unilever_scrapping_pipeline:/opt/airflow/script/tokopedia_unilever_scrapping_pipeline
       - ./credential.csv:/home/airflow/credential.csv
       - ./pipeline/airflow/tokopedia_unilever_scrapping_pipeline/requirements.txt:/home/airflow/requirements.txt
     command: >

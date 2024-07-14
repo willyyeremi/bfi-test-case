@@ -9,7 +9,7 @@ from airflow.utils.trigger_rule import TriggerRule
 import datetime
 import sys
 
-sys.path.insert(0, '/opt/airflow/script')
+sys.path.insert(0, '/opt/airflow/script/tokopedia_unilever_scrapping_pipeline')
 import module
 
 default_args = {
@@ -20,16 +20,6 @@ default_args = {
     'email_on_retry': False,
     'retries': 1,
 }
-
-# def scrapping_function(**kwargs):
-#     state = kwargs.get('state', 1)
-#     url = kwargs.get('url', 'https://www.tokopedia.com/unilever/product')
-#     driver = module.scrapper.driver_maker()
-#     link_list, url, state = module.scrapper.product_list_loader(driver, url)
-#     data_list = module.scrapper.web_data_get(driver, link_list)
-#     module.scrapper.product_master_input(f'/home/credential.csv', data_list)
-#     module.scrapper.product_input(f'/home/credential.csv', data_list)
-#     return state, url
 
 def create_subdag_1(parent_dag_name, child_dag_name, args):
     dag_subdag = DAG(
@@ -145,7 +135,7 @@ with DAG('bfi_test_case', default_args = default_args, schedule_interval = '@dai
     
     pricerecommendation_ml_task = BashOperator(
         task_id='pricerecommendation_ml_task',
-        bash_command='python /opt/airflow/script/module/pricerecommendation.py',
+        bash_command='python /opt/airflow/script/tokopedia_unilever_scrapping_pipeline/pricerecommendation.py',
         dag=dag,
     )
 

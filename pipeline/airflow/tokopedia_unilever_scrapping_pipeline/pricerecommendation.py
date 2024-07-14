@@ -3,10 +3,7 @@ from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker, declarative_base
 import pandas
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import PassiveAggressiveRegressor
-from sklearn.metrics import mean_absolute_error
 
 import module
 
@@ -77,7 +74,6 @@ def preprocessing_data(chunk_data):
     features.columns = features.columns.astype(str)
     features = StandardScaler().fit_transform(features)
     target = chunk_data[['price']]
-    # return train_test_split(features, target, test_size = 0.2, random_state = 42)
     return features, target
 
 for data in data_loader(database_session, 100):
@@ -100,7 +96,6 @@ next_data['price'] = price_prediction
 next_data = next_data.drop(columns = ['type', 'originalprice', 'discountpercentage'], axis = 1)
 
 database_session.execute(text("truncate public.pricerecommendation"))
-# trg_conn.execute(sqlalchemy.sql.text("truncate {schema_target}.{table_target}"))
 for data in next_data.to_dict("records"):
     new_data = pricerecommendation(
         productmasterid = data['productmasterid']
