@@ -9,5 +9,5 @@ data_bp = Blueprint('data', __name__)
 @jwt_required()
 def get_data():
     data = ProcessedData.query.all()
-    result = [{'id': d.id, 'data': d.data, 'recommendation': d.recommendation} for d in data]
+    result = [{'productmasterid': d.productmasterid, 'data': d.data, 'recommendation': d.recommendation} for d in data]
     return jsonify(result)
