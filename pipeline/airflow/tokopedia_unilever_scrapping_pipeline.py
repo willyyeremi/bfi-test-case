@@ -61,7 +61,7 @@ def create_subdag_1(parent_dag_name, child_dag_name, args):
         provide_context = True,
         op_kwargs = {
             'driver': '{{ task_instance.xcom_pull(task_ids = "driver_maker_task") }}',
-            'url': '{{ task_instance.xcom_pull(task_ids = "product_list_loader_task[1]") }}'
+            'url': '{{ task_instance.xcom_pull(task_ids = "product_list_loader_task")[1] }}'
         },
         dag = dag_subdag
     )
