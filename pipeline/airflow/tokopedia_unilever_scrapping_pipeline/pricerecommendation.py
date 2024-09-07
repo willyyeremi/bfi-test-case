@@ -2,8 +2,8 @@ from sqlalchemy import create_engine, MetaData, func, Column, ForeignKey, Intege
 from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker, declarative_base
 import pandas
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.linear_model import PassiveAggressiveRegressor
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.linear_model import SGDRegressor
 
 import module
 
@@ -12,9 +12,10 @@ from datetime import timedelta
 from math import ceil
 
 
-root = Path(__file__).parent.parent
+# credential_path = f'{Path(__file__).parent.parent.parent.parent}\\credential.csv'
+credential_path = '/home/airflow/credential.csv'
 
-database_credential_dict = module.connection.credential_get(f'{root}\\credential.csv')
+database_credential_dict = module.connection.credential_get(credential_path)
 database_url = module.connection.url(database_credential_dict['user'], database_credential_dict['password'], database_credential_dict['host'], database_credential_dict['port'], database_credential_dict['database'])
 database_engine = create_engine(database_url)
 database_session = sessionmaker(autocommit = False, autoflush = False, bind = database_engine)()
@@ -57,6 +58,7 @@ def data_loader(session, batch_size):
             ,product.discountpercentage.label('discountpercentage')
             ,product.createdate.label('createdate'))
         .join(productmaster)
+        .filter(product.price != 10000000)
         .offset(offset)
         .limit(batch_size))
     data = pandas.read_sql(data_query.statement, database_session.bind)
@@ -64,21 +66,19 @@ def data_loader(session, batch_size):
     offset += batch_size
 
 def preprocessing_data(chunk_data):
-    type_one_hot_encode = pandas.DataFrame(OneHotEncoder(handle_unknown = 'ignore', sparse_output = False).fit_transform(chunk_data[['type']]))
-    type_one_hot_encode.index = chunk_data.index
-    chunk_data = chunk_data.drop('type', axis = 1)
-    chunk_data = pandas.concat([chunk_data, type_one_hot_encode], axis=1)
+    type_label_encode = pandas.DataFrame(LabelEncoder().fit_transform(chunk_data['type']))
+    chunk_data['type'] = type_label_encode
     chunk_data['createdate'] = pandas.to_datetime(chunk_data['createdate'])
     chunk_data['createdate'] = chunk_data['createdate'].astype(int) / 10**9  
     features = chunk_data[[i for i in chunk_data.columns.values.tolist() if i!= 'price']]
     features.columns = features.columns.astype(str)
     features = StandardScaler().fit_transform(features)
-    target = chunk_data[['price']]
+    target = chunk_data['price']
     return features, target
 
 for data in data_loader(database_session, 100):
     x_batch, y_batch = preprocessing_data(data)
-    model = PassiveAggressiveRegressor().partial_fit(x_batch, y_batch)
+    model = SGDRegressor().partial_fit(x_batch, y_batch)
 
 next_data_query = (database_session 
     .query(
@@ -93,7 +93,9 @@ next_data['price'] = 0
 x_new, y_new = preprocessing_data(next_data)
 price_prediction = model.predict(x_new)
 next_data['price'] = price_prediction
-next_data = next_data.drop(columns = ['type', 'originalprice', 'discountpercentage'], axis = 1)
+next_data['price'] = next_data['price'].round().astype(int)
+next_data = next_data.drop(columns = ['type', 'originalprice', 'discountpercentage', 'createdate'], axis = 1)
+next_data['createdate'] = pandas.to_datetime('today') 
 
 database_session.execute(text("truncate public.pricerecommendation"))
 for data in next_data.to_dict("records"):

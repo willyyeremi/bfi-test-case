@@ -1,7 +1,7 @@
 @echo off
 
 mkdir ".\database\postgresql"
-docker-compose up -d
+call start_container.bat
 python -m pip install virtualenv
 python -m virtualenv ./api/.venv
 .\api\.venv\Scripts\python.exe -m pip install -r ./api/requirements.txt

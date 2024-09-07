@@ -3,3 +3,4 @@ webdriver-manager
 beautifulsoup4
 pandas
 scikit-learn
+random_user_agent
